@@ -1,6 +1,11 @@
 # chatclicks
 Python package for the Twitch extension "Chat Clicks"
 
+## Installation
+```pip install chatclicks```
+
+## Example
+
 All you need is the channel ID of the broadcaster to get this to work.
 
 You must use asyncio for your program. 
