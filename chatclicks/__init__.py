@@ -42,7 +42,6 @@ class ChatClicks():
             self.event_handlers["rightClick"](data)
 
     async def init(self, data):
-        print(self.event_handlers.keys())
         if "init" in self.event_handlers:
             await self.event_handlers["init"](data)
         else:
