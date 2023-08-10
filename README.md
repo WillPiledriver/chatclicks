@@ -3,7 +3,7 @@ Python package for the Twitch extension "Chat Clicks"
 
 All you need is the channel ID of the broadcaster to get this to work.
 
-I strongly recommend using asyncio or some other asynchronous method for your program. 
+You must use asyncio for your program. 
 
 The following is the most basic example:
 ```python
