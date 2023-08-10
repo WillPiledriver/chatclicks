@@ -30,4 +30,5 @@ async def on_right_click(data):
     print("Right Click Data:", data)
 
 if __name__ == "__main__":
-    asyncio.run(run())```
+    asyncio.run(run())
+```
