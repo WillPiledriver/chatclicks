@@ -35,11 +35,11 @@ class ChatClicks():
 
     async def leftClick(self, data):
         if "leftClick" in self.event_handlers:
-            self.event_handlers["leftClick"](data)
+            await self.event_handlers["leftClick"](data)
 
     async def rightClick(self, data):
         if "rightClick" in self.event_handlers:
-            self.event_handlers["rightClick"](data)
+            await self.event_handlers["rightClick"](data)
 
     async def init(self, data):
         if "init" in self.event_handlers:
