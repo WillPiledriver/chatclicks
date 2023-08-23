@@ -1,0 +1,25 @@
+[project]
+name = "chatclicks"
+version = "0.2.75"
+authors = [
+  { name="willpiledriver", email="smifthsmurfth@gmail.com" },
+]
+description = "A client for the Twitch Extension named Chat Clicks"
+readme = "README.md"
+requires-python = ">=3.5"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+keywords = ["twitch", "extension", "client", "chat"]
+
+[project.dependencies]
+python-socketio = ">=5.8.0"
+
+[project.development-status]
+status = "4 - Beta"
+
+[project.urls]
+"Homepage" = "https://github.com/WillPiledriver/chatclicks"
