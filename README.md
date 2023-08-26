@@ -38,6 +38,11 @@ async def on_right_click(data):
 async def on_drag(data):
     print("Drag Data:", data)
 
+@cc.event(name="bits")
+async def on_bits(data):
+    print("Bits Data:", data)
+
+
 if __name__ == "__main__":
     asyncio.run(run())
 ```

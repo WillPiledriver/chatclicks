@@ -1,6 +1,6 @@
 [project]
 name = "chatclicks"
-version = "0.2.75"
+version = "0.2.8"
 authors = [
   { name="willpiledriver", email="smifthsmurfth@gmail.com" },
 ]
