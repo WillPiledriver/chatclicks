@@ -12,7 +12,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-license = "MIT"
+license = { text = "MIT" }
 keywords = ["twitch", "extension", "client", "chat"]
 
 [project.dependencies]
