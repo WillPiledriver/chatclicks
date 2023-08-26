@@ -15,6 +15,7 @@ class ChatClicks():
         self.sio.on("leftClick", handler=self.leftClick)
         self.sio.on("rightClick", handler=self.rightClick)
         self.sio.on("drag", handler=self.drag)
+        self.sio.on("bits", handler=self.bits)
         self.sio.on("init", handler=self.init)
         self.sio.on("connect_error", handler=self.connect_error)
         self.sio.on("disconnect", handler=self.disconnect)
@@ -67,8 +68,17 @@ class ChatClicks():
         if not self.allow_anonymous:
             if data["opaque_id"].startswith("A"):
                 return
-        if "rightClick" in self.event_handlers:
+        if "drag" in self.event_handlers:
             await self.event_handlers["drag"](data)
+    
+    async def bits(self, data: dict) -> None:
+        if "transactionReceipt" not in data["transaction"]:
+            print("Test Bits:", data)
+        else:
+            if "bits" in self.event_handlers:
+                await self.event_handlers["bits"](data)
+            else:
+                print("BITS DATA", data)
 
     async def init(self, data: dict) -> None:
         if "init" in self.event_handlers:
