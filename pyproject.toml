@@ -1,6 +1,6 @@
 [project]
 name = "chatclicks"
-version = "0.2.8"
+version = "0.2.80"
 authors = [
   { name="willpiledriver", email="smifthsmurfth@gmail.com" },
 ]
@@ -14,12 +14,7 @@ classifiers = [
 ]
 license = { text = "MIT" }
 keywords = ["twitch", "extension", "client", "chat"]
-
-[project.dependencies]
-python-socketio = ">=5.8.0"
-
-[project.development-status]
-status = "4 - Beta"
+dependencies = ["python-socketio"]
 
 [project.urls]
 "Homepage" = "https://github.com/WillPiledriver/chatclicks"
