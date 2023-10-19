@@ -1,8 +1,10 @@
 import socketio
 import asyncio
+import numpy as np
+from sklearn.cluster import DBSCAN
 
 class ChatClicks():
-    def __init__(self, channel_id, sub_only=False, allow_anonymous=True, ban_list=[], max_poll_time=10, sub_boost=1, priority_boost=4, priority_votes=5, tug_weight=50, check_coords_func=None, poll_callback=None):
+    def __init__(self, channel_id, sub_only=False, allow_anonymous=True, ban_list=[], max_poll_time=10, sub_boost=1, priority_boost=4, priority_votes=5, tug_weight=10, dimensions="1920x1080", check_coords_func=None, poll_callback=None):
         self.channel_id = channel_id
         self.allow_anonymous = allow_anonymous
         self.sub_only = sub_only
@@ -18,8 +20,9 @@ class ChatClicks():
         self.check_coords_func = check_coords_func
         self.poll_callback = poll_callback
         self.bits_cost = None
+        self.dimensions = [int(size) for size in dimensions.split("x")]
         self.tug_weight = tug_weight
-        self._tug_of_war = 500
+        self._tug_of_war = 50
         self.event_handlers = {}
         # Register events with decorated methods
         self.sio.on("connect", handler=self.connect)
@@ -38,12 +41,14 @@ class ChatClicks():
 
     @tug_of_war.setter
     def tug_of_war(self, value):
-        # Clamp the value to be between 0 and 1000
-        self._tug_of_war = max(0, min(1000, value))
+        # Clamp the value to be between -100 and 100
+        self._tug_of_war = max(-100, min(100, value))
     
     @property
     def poll_time(self):
-        return max(0.05, (self._tug_of_war / 1000) * self.max_poll_time)
+        if self.tug_of_war < 1:
+            return 0.05
+        return max(0, (self._tug_of_war / 100) * self.max_poll_time - 1) + 1
 
     def event(self, name: str):
         # Decorator function that takes the event name
@@ -73,19 +78,31 @@ class ChatClicks():
             return
         
         if click != "drag":
-            if not 0 <= data["x"] <= 1:
+            if not 0 <= data["x"] < 1:
                 return
-            if not 0 <= data["y"] <= 1:
+            if not 0 <= data["y"] < 1:
                 return
         else:
-            if not 0 <= data["start"]["x"] <= 1:
+            if not 0 <= data["start"]["x"] < 1:
                 return
-            if not 0 <= data["start"]["y"] <= 1:
+            if not 0 <= data["start"]["y"] < 1:
                 return
-            if not 0 <= data["end"]["x"] <= 1:
+            if not 0 <= data["end"]["x"] < 1:
                 return
-            if not 0 <= data["end"]["y"] <= 1:
+            if not 0 <= data["end"]["y"] < 1:
                 return
+        
+        
+        data["type"] = {"leftClick": "left", "rightClick": "right", "drag": "drag"}[data["action"]]
+
+        if data["type"] != "drag":
+            data["x"] = round(data["x"] * self.dimensions[0])
+            data["y"] = round(data["y"] * self.dimensions[1])
+        else:
+            data["start"]["x"] = round(data["start"]["x"] * self.dimensions[0])
+            data["start"]["y"] = round(data["start"]["y"] * self.dimensions[1])
+            data["end"]["x"] = round(data["end"]["x"] * self.dimensions[0])
+            data["end"]["y"] = round(data["end"]["y"] * self.dimensions[1])
 
         if self.check_coords_func is not None:
             if not await self.check_coords_func(data):
@@ -227,13 +244,96 @@ class ChatClicks():
         if name.lower() in self.ban_list:
             self.ban_list.remove(name.lower())
 
+    async def find_center_cluster(self, poll_dict: dict) -> dict:
+        # Extract coordinates and click information from the click_dict
+        x_coordinates = []
+        y_coordinates = []
+        click_counts = {
+            "left": 0,
+            "right": 0,
+            "drag": 0,
+        }
+        drag_start_coordinates = []  # For start cluster
+        drag_end_coordinates = []    # For end cluster
+
+        for user, data in poll_dict.items():
+            coords = data["coords"]
+            n = data["n"]
+
+            if data["click"] == "drag":
+                # For drag, separate the start and end coordinates
+                x_start = coords["start"]["x"]
+                y_start = coords["start"]["y"]
+                x_end = coords["end"]["x"]
+                y_end = coords["end"]["y"]
+                
+                drag_start_coordinates.extend([(x_start, y_start)] * n)
+                drag_end_coordinates.extend([(x_end, y_end)] * n)
+                
+                click_counts["drag"] += n
+            else:
+                # For regular clicks
+                x_coordinates.extend([coords["x"]] * n)
+                y_coordinates.extend([coords["y"]] * n)
+                click_counts[data["click"]] += n
+
+        most_clicked_key = max(click_counts, key=click_counts.get)
+
+        # Check if coordinates are empty before applying DBSCAN
+        if len(x_coordinates) > 0:
+            coordinates = np.column_stack((x_coordinates, y_coordinates))
+            # Define the DBSCAN parameters for regular clicks
+            eps = 150  # Distance threshold for clustering
+            min_samples = 1  # Minimum number of points in a cluster
+
+            # Perform DBSCAN clustering for regular clicks
+            dbscan = DBSCAN(eps=eps, min_samples=min_samples)
+            labels = dbscan.fit_predict(coordinates)
+
+            # Find the cluster with the most points for regular clicks
+            unique_labels, counts = np.unique(labels, return_counts=True)
+            most_populated_cluster_label = unique_labels[np.argmax(counts)]
+
+            # Get the center coordinates of the most populated cluster for regular clicks
+            most_populated_cluster = coordinates[labels == most_populated_cluster_label]
+            center = np.mean(most_populated_cluster, axis=0)
+
+
+            x, y = (round(center[0]), round(center[1]))
+
+        # Now, calculate centers for drag start and end coordinates
+        if len(drag_start_coordinates) > 0:
+            drag_start_coordinates = np.array(drag_start_coordinates)
+            center_start = np.mean(drag_start_coordinates, axis=0)
+            x_start, y_start = (round(center_start[0]), round(center_start[1]))
+
+        if len(drag_end_coordinates) > 0:
+            drag_end_coordinates = np.array(drag_end_coordinates)
+            center_end = np.mean(drag_end_coordinates, axis=0)
+            x_end, y_end = (round(center_end[0]), round(center_end[1]))
+        
+        if most_clicked_key.startswith("drag"):
+            return {"type": "drag", "start": {"x": x_start, "y": y_start}, "end": {"x": x_end, "y": y_end}}
+        elif most_clicked_key in ["left", "right"]:
+            return {"type": most_clicked_key, "x": x, "y": y}
+        else:
+            return None
+
     async def click_loop(self):
         while True:
-            await asyncio.sleep(self.poll_time)
-            # Calculations for clicks
-            if self.poll_callback is not None:
-                await self.poll_callback(self.poll_dict)
-            self.poll_dict = dict()
+            try:
+                await asyncio.sleep(self.poll_time)
+                # TODO: put DBSCAN here and verify coordinates are valid
+                if len(self.poll_dict) > 0:
+                    result = await self.find_center_cluster(self.poll_dict)
+                    if self.poll_callback is not None and await self.check_coords_func(result):
+                        await self.poll_callback(result, self.poll_dict)
+                    else:
+                        print(result)
+                    self.poll_dict = dict()
+            except Exception as e:
+                self.poll_dict = dict()
+                print(e)
     
     async def start(self):
         self.loop.create_task(self.click_loop())
