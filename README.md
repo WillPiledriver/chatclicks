@@ -3,6 +3,7 @@ Python package for the Twitch extension "Chat Clicks"
 
 ## Installation
 ```pip install chatclicks```
+[Click here for the extension](https://dashboard.twitch.tv/extensions/g04l3i51oq6lqvvxpz6iaqt7rrm9eb-0.0.85)
 
 ## Setup
 This is relatively simple to setup. Using the example below, you can really just do whatever you want with it. I will explain the main features. 
