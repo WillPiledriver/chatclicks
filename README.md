@@ -53,36 +53,39 @@ import pydirectinput as pdi
 async def check_coords(data):
     if data["type"] == "drag":
         return False
+        # check drag coordinates
     else:
         # check left/right click
         pass
     return True
 
-# center contains the coordinates for the polled 
+
 # poll_dict contains all the clicks from all the users within the polling time.
 # This is where you would decide where to click.
 # The minimum polling time is 1/20th of a second (0.05s), and initiates at half of the max_poll_time.
 async def poll_handler(center, poll_dict):
-    if center["type"] == "drag":
+    print(center)
+    print(poll_dict)
+    '''if center["type"] == "drag":
         pdi.moveTo(center["start"]["x"], center["start"]["y"])
         pdi.dragTo(center["end"]["x"], center["end"]["y"], duration=0.025)
     else:
         pdi.moveTo(center["x"], center["y"], duration=0.025)
-        pdi.click(center["x"], center["y"], button=center["type"])
+        pdi.click(center["x"], center["y"], button=center["type"])'''
 
 
 cc = ChatClicks(
-    channel_id="12345678",             # Channel ID of the broadcaster.
+    channel_id="23728793",             # Channel ID of the broadcaster.
     sub_only=False,                    # Only allow subscribers to click
     allow_anonymous=False,             # Allow anonymous users to click (users that are not logged in)
-    max_poll_time=10,                  # Amount of time in seconds to poll clicks
+    max_poll_time=10,                  # Maximum amount of time in seconds to poll clicks (initiates at half of this number)
     sub_boost=1,                       # Amount of extra weight a subscriber has
     priority_boost=19,                 # Extra weight a priority user has
     priority_votes=20,                 # Amount of priority clicks a priority user gets
     tug_weight=5,                      # The weight of the tug for the chaos/order bits transaction
     dimensions="1920x1080",            # Dimensions of the screen to click on
     ban_list=[],                       # List of banned usernames
-    check_coords_func=check_coords,    # Function that verifies if a click coordinates are valid
+    check_coords_func=check_coords,    # Function that verifies if click coordinates are valid
     poll_callback=poll_handler         # Function that is called after polling time
 )
 
@@ -116,25 +119,30 @@ class Test:
 async def main():
     await cc.ban_username("barrycarlyon")
     await cc.unban_username("barrycarlyon")
-    await asyncio.gather(cc.run(), Test().run())  # Run the loops in parallel asynchronously.
+    # cc.tug_of_war = 100 # This will force the poll time to be max_poll_time
+    await asyncio.gather(cc.run(), Test().run())
 
-# These are the event handlers. You can do whatever you want with these. If you remove them it will just default to printing data.
+# These are the event handlers. You can do whatever you want with these. If you remove them, the program will still work.
 
 @cc.event(name="init")
 async def on_init(data):
-    print(data)
+    pass
+    #print(data)
 
 @cc.event(name="leftClick")
 async def on_left_click(data):
-    print("Left Click Data:", data)
+    pass
+    #print("Left Click Data:", data)
 
 @cc.event(name="rightClick")
 async def on_right_click(data):
-    print("Right Click Data:", data)
+    pass
+    #print("Right Click Data:", data)
 
 @cc.event(name="drag")
 async def on_drag(data):
-    print("Drag Data:", data)
+    pass
+    #print("Drag Data:", data)
 
 @cc.event(name="bits")
 async def on_bits(data):
