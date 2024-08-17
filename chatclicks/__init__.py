@@ -1,5 +1,6 @@
 import socketio
 import asyncio
+import time
 import numpy as np
 from sklearn.cluster import DBSCAN
 
@@ -17,6 +18,7 @@ class ChatClicks():
         self.poll_dict = dict()
         self.priority_dict = dict()
         self.loop = None
+        self.clock_offset = 0
         self.check_coords_func = check_coords_func
         self.poll_callback = poll_callback
         self.bits_cost = None
@@ -74,6 +76,8 @@ class ChatClicks():
         :param data: This is the user's data sent from the server.
         :param click: This is the user's click.
         """
+
+
         if data["opaque_id"] in self.poll_dict:
             return
         
@@ -154,6 +158,8 @@ class ChatClicks():
             if data["opaque_id"].startswith("A"):
                 return
 
+        data["event_time"] -= self.clock_offset
+
         await self.add_data(data, "left")
 
         if "leftClick" in self.event_handlers:
@@ -172,6 +178,8 @@ class ChatClicks():
             if data["opaque_id"].startswith("A"):
                 return
 
+        data["event_time"] -= self.clock_offset
+
         await self.add_data(data, "right")
 
         if "rightClick" in self.event_handlers:
@@ -189,6 +197,8 @@ class ChatClicks():
         if not self.allow_anonymous:
             if data["opaque_id"].startswith("A"):
                 return
+            
+        data["event_time"] -= self.clock_offset
 
         await self.add_data(data, "drag")
 
@@ -225,11 +235,12 @@ class ChatClicks():
                 print("Bits Data:", data)
 
     async def init(self, data: dict) -> None:
-        if "init" in self.event_handlers:
-            await self.event_handlers["init"](data)
-        else:
-            if data == self.channel_id:
-                print("Echo received: " + self.channel_id)
+        if data["id"] == self.channel_id:
+            print("Echo received: " + self.channel_id)
+            self.clock_offset = time.time() - data["time"]
+            print(f"Time offset: {self.clock_offset}")
+            if "init" in self.event_handlers:
+                await self.event_handlers["init"](data)
 
     async def connect_error(self, data) -> None:
         print("The websocket connection failed!", data)
@@ -323,7 +334,6 @@ class ChatClicks():
         while True:
             try:
                 await asyncio.sleep(self.poll_time)
-                # TODO: put DBSCAN here and verify coordinates are valid
                 if len(self.poll_dict) > 0:
                     result = await self.find_center_cluster(self.poll_dict)
                     if self.poll_callback is not None and await self.check_coords_func(result):
