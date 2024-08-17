@@ -75,7 +75,7 @@ async def poll_handler(center, poll_dict):
 
 
 cc = ChatClicks(
-    channel_id="23728793",             # Channel ID of the broadcaster.
+    channel_id="12345678",             # Channel ID of the broadcaster.
     sub_only=False,                    # Only allow subscribers to click
     allow_anonymous=False,             # Allow anonymous users to click (users that are not logged in)
     max_poll_time=10,                  # Maximum amount of time in seconds to poll clicks (initiates at half of this number)
