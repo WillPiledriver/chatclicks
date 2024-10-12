@@ -24,15 +24,6 @@ async def poll_handler(center, poll_dict):
 
     # Only process if it's not a "drag" type
     if center["type"] != "drag":
-        xmin = 348  # Stream x-offset
-        ymin = 195  # Stream y-offset
-        ratio = 0.64  # Stream is 64% of the monitor
-
-        # Monitor-to-stream translation
-        # First subtract the offset, then divide by ratio to scale up to monitor space
-        center["x"] = (center["x"] - xmin) / ratio
-        center["y"] = (center["y"] - ymin) / ratio
-
         # Move the mouse using pdi.moveTo (e.g., pyautogui)
         pdi.moveTo(center["x"], center["y"], duration=1)
         print("Translated center:", center)
