@@ -36,7 +36,6 @@ class ChatClicks():
         if self.monitor is None:
             for mm in m:
                 print(f"Monitor {mm.name}: {mm.width}x{mm.height} at ({mm.x}, {mm.y})")
-                print("Defaulting to primary monitor.")
             self.bounding_box = [m[0].x, m[0].x + m[0].width, m[0].y, m[0].y + m[0].height]
         else:
             m = m[self.monitor]
@@ -131,8 +130,8 @@ class ChatClicks():
         data["type"] = {"leftClick": "left", "rightClick": "right", "drag": "drag"}[data["action"]]
 
         if data["type"] != "drag":
-            data["x"] = data["x"] * data["x"] * (self.bounding_box[1] - self.bounding_box[0]) + self.bounding_box[0]
-            data["y"] = data["y"] * data["y"] * (self.bounding_box[3] - self.bounding_box[2]) + self.bounding_box[2]
+            data["x"] = data["x"] * (self.bounding_box[1] - self.bounding_box[0]) + self.bounding_box[0]
+            data["y"] = data["y"] * (self.bounding_box[3] - self.bounding_box[2]) + self.bounding_box[2]
         else:
             data["start"]["x"] = data["start"]["x"] * (self.bounding_box[1] - self.bounding_box[0]) + self.bounding_box[0]
             data["start"]["y"] = data["start"]["y"] * (self.bounding_box[3] - self.bounding_box[2]) + self.bounding_box[2]
