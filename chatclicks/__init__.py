@@ -1,5 +1,6 @@
 import asyncio
 import time
+from screeninfo import get_monitors
 import socketio
 import numpy as np
 from sklearn.cluster import DBSCAN
@@ -8,7 +9,7 @@ class ChatClicks():
     """
     Bot for the ChatClicks Twitch Extension
     """
-    def __init__(self, channel_id, sub_only=False, allow_anonymous=True, ban_list=None, max_poll_time=10, sub_boost=1, priority_boost=4, priority_votes=5, tug_weight=10, dimensions="1920x1080", check_coords_func=None, poll_callback=None):
+    def __init__(self, channel_id, sub_only=False, allow_anonymous=True, ban_list=None, max_poll_time=10, sub_boost=1, priority_boost=4, priority_votes=5, tug_weight=10, monitor=None, check_coords_func=None, poll_callback=None):
         self.channel_id = channel_id
         self.allow_anonymous = allow_anonymous
         self.sub_only = sub_only
@@ -28,9 +29,20 @@ class ChatClicks():
         self.check_coords_func = check_coords_func
         self.poll_callback = poll_callback
         self.bits_cost = None
-        self.dimensions = [int(size) for size in dimensions.split("x")]
         self.tug_weight = tug_weight
         self._tug_of_war = 50
+        self.monitor = monitor
+        m = get_monitors()
+        if self.monitor is None:
+            for mm in m:
+                print(f"Monitor {mm.name}: {mm.width}x{mm.height} at ({mm.x}, {mm.y})")
+                print("Defaulting to primary monitor.")
+            self.bounding_box = [m[0].x, m[0].x + m[0].width, m[0].y, m[0].y + m[0].height]
+        else:
+            m = m[self.monitor]
+            self.bounding_box = [m.x, m.x + m.width, m.y, m.y + m.height]
+            print(self.bounding_box)
+
         self.event_handlers = {}
         # Register events with decorated methods
         self.sio.on("connect", handler=self.connect)
@@ -119,13 +131,13 @@ class ChatClicks():
         data["type"] = {"leftClick": "left", "rightClick": "right", "drag": "drag"}[data["action"]]
 
         if data["type"] != "drag":
-            data["x"] = data["x"] * self.dimensions[0]
-            data["y"] = data["y"] * self.dimensions[1]
+            data["x"] = data["x"] * data["x"] * (self.bounding_box[1] - self.bounding_box[0]) + self.bounding_box[0]
+            data["y"] = data["y"] * data["y"] * (self.bounding_box[3] - self.bounding_box[2]) + self.bounding_box[2]
         else:
-            data["start"]["x"] = data["start"]["x"] * self.dimensions[0]
-            data["start"]["y"] = data["start"]["y"] * self.dimensions[1]
-            data["end"]["x"] = data["end"]["x"] * self.dimensions[0]
-            data["end"]["y"] = data["end"]["y"] * self.dimensions[1]
+            data["start"]["x"] = data["start"]["x"] * (self.bounding_box[1] - self.bounding_box[0]) + self.bounding_box[0]
+            data["start"]["y"] = data["start"]["y"] * (self.bounding_box[3] - self.bounding_box[2]) + self.bounding_box[2]
+            data["end"]["x"] = data["end"]["x"] * (self.bounding_box[1] - self.bounding_box[0]) + self.bounding_box[0]
+            data["end"]["y"] = data["end"]["y"] * (self.bounding_box[3] - self.bounding_box[2]) + self.bounding_box[2]
 
         if self.check_coords_func is not None:
             if not await self.check_coords_func(data):
@@ -353,18 +365,18 @@ class ChatClicks():
             center = np.mean(most_populated_cluster, axis=0)
 
 
-            x, y = (center[0], center[1])
+            x, y = (float(center[0]), float(center[1]))
 
         # Now, calculate centers for drag start and end coordinates
         if len(drag_start_coordinates) > 0:
             drag_start_coordinates = np.array(drag_start_coordinates)
             center_start = np.mean(drag_start_coordinates, axis=0)
-            x_start, y_start = (center_start[0], center_start[1])
+            x_start, y_start = (float(center_start[0]), float(center_start[1]))
 
         if len(drag_end_coordinates) > 0:
             drag_end_coordinates = np.array(drag_end_coordinates)
             center_end = np.mean(drag_end_coordinates, axis=0)
-            x_end, y_end = (center_end[0], center_end[1])
+            x_end, y_end = (float(center_end[0]), float(center_end[1]))
 
         if most_clicked_key.startswith("drag"):
             return {"type": "drag", "start": {"x": x_start, "y": y_start}, "end": {"x": x_end, "y": y_end}}
