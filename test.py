@@ -19,9 +19,28 @@ async def check_coords(data):
 # This is where you would decide where to click.
 # The minimum polling time is 1/20th of a second (0.05s), and initiates at half of the max_poll_time.
 async def poll_handler(center, poll_dict):
-    print(center)
-    print(poll_dict)
-    
+    print("Original center:", center)
+    print("Poll data:", poll_dict)
+
+    # Only process if it's not a "drag" type
+    if center["type"] != "drag":
+        xmin = 348  # Stream x-offset
+        ymin = 195  # Stream y-offset
+        ratio = 0.64  # Stream is 64% of the monitor
+
+        # Monitor-to-stream translation
+        # First subtract the offset, then divide by ratio to scale up to monitor space
+        center["x"] = (center["x"] - xmin) / ratio
+        center["y"] = (center["y"] - ymin) / ratio
+
+        # Move the mouse using pdi.moveTo (e.g., pyautogui)
+        pdi.moveTo(center["x"], center["y"], duration=1)
+        print("Translated center:", center)
+
+    else:
+        print("Ignoring drag type")
+
+
 
 
 cc = ChatClicks(
@@ -59,7 +78,7 @@ class Test:
         c = 0
         while True:
             await asyncio.sleep(1)
-            print(c := c+1)
+            print(pdi.position())
     
     def run(self):
         return self.loop.create_task(self.test_run())
