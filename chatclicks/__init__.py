@@ -389,19 +389,15 @@ class ChatClicks():
         This is the main loop for polling the clicks.
         """
         while True:
-            try:
-                await asyncio.sleep(self.poll_time)
-                if len(self.poll_dict) > 0:
-                    result = await self.find_center_cluster(self.poll_dict)
-                    if self.poll_callback is not None and await self.check_coords_func(result):
-                        await self.poll_callback(result, self.poll_dict)
-                    else:
-                        print(result)
-                    self.poll_dict = dict()
-            except Exception as e:
+            await asyncio.sleep(self.poll_time)
+            if len(self.poll_dict) > 0:
+                result = await self.find_center_cluster(self.poll_dict)
+                if self.poll_callback is not None and await self.check_coords_func(result):
+                    await self.poll_callback(result, self.poll_dict)
+                else:
+                    print(result)
                 self.poll_dict = dict()
-                print(e)
-
+                
     async def start(self):
         """
         Starts the websocket connection and the click polling loop.
